@@ -8,6 +8,28 @@
 #define END     "\u255A"
 #define CROSS   "\u2560"
 
+/*
+ * we have 4 types of configurations:
+ *
+ * 1. VERT END HORIZ
+ * 2. VERT CROSS HORIZ
+ *
+ * 3. SPACE CROSS HORIZ
+ * 4. SPACE END HORIZ
+ *
+ * the 1 implies that we are not at the end of the father but
+ * at the end of the children
+ *
+ * the 2 implies that we are not at the end of the father and
+ * not at the end of the children
+ *
+ * the 3 implies that we are at the end of the father but not
+ * of the children
+ *
+ * the 4 imppies that we are at the end of the father and at
+ * the end of the children
+ */
+
 void ntt_rdiropen(const char *dn, const char *prefix, int is_last);
 
 void ntt_rdraw(const char *dn, const char *prefix,
