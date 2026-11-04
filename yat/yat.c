@@ -8,6 +8,10 @@
 #define END     "\u255A"
 #define CROSS   "\u2560"
 
+/* flags for the program */
+#define CLASSIC 0
+#define NO_HIDE 1
+
 #define DIR_COLOR(my_dir) \
     "\x1b[91m" my_dir "\x1b[0m"
 
@@ -48,10 +52,10 @@
  *   then before the next element we will must print A VERT 
  *   because the father folder has other childs to continue */
 
-void ntt_rdiropen(const char *dn, const char *prefix);
+void ntt_rdiropen(const char *dn, const char *prefix, int flag);
 
 
-void ntt_rdiropen(const char *dn, const char *prefix) {
+void ntt_rdiropen(const char *dn, const char *prefix, int flag) {
     DIR *dir = opendir(dn);
     if (!dir) { return; }
 
@@ -65,8 +69,15 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
 
         /* conditions for kipping the iteration */
         if (next == NULL) { break; }
-        if (strcmp(next->d_name, ".") == 0 ||
-            strcmp(next->d_name, "..") == 0) { continue; }
+
+        if (flag == NO_HIDE) {
+            if (strcmp(next->d_name, ".") == 0 ||
+                strcmp(next->d_name, "..") == 0) { continue; }
+        }
+        else if (flag == CLASSIC)
+            {if (next->d_name[0] == '.') { continue; } }
+        else { return; }
+
         if (started == 0) { started = 1; curr = *next; continue; }
 
         /* actual logic of iteration */
@@ -86,7 +97,7 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
                 "%s%s", prefix, this_prefix
             );
             /* iterating on the next directory */
-            ntt_rdiropen(next_dir_name, new_prefix);
+            ntt_rdiropen(next_dir_name, new_prefix, flag);
         }
         else { printf("%s%s "FILE_COLOR("%s\n"), prefix, CROSS HORIZ, curr.d_name); }
         curr = *next;
@@ -119,13 +130,22 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
                 "%s%s", prefix, this_prefix
             );
 
-            ntt_rdiropen(next_dir_name, new_prefix);
+            ntt_rdiropen(next_dir_name, new_prefix, flag);
         }
     }
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) { printf("Must give the name of folder\n"); return 1; }
-    printf("%s\n", argv[1]);
-    ntt_rdiropen(argv[1],  "");
+    int flag = 0;
+    switch(argc) {
+        case 1: { printf("Must give the name of folder\n"); return 1; }
+        case 2: { flag = CLASSIC; } break;
+        case 3: {
+            if (strcmp(argv[1], "-a") == 0 ||
+                strcmp(argv[1], "--all") == 0) { flag = NO_HIDE; }
+        }
+    }
+    printf("%s\n", argv[argc-1]);
+    ntt_rdiropen(argv[argc-1],  "", flag);
+    return 0;
 }
