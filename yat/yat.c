@@ -8,6 +8,12 @@
 #define END     "\u255A"
 #define CROSS   "\u2560"
 
+#define DIR_COLOR(my_dir) \
+    "\x1b[91m" my_dir "\x1b[0m"
+
+#define FILE_COLOR(my_dir) \
+    "\x1b[92m" my_dir "\x1b[0m"
+
 /*
  * we have 4 types of configurations:
  *
@@ -42,6 +48,8 @@
  *   then before the next element we will must print A VERT 
  *   because the father folder has other childs to continue */
 
+void ntt_rdiropen(const char *dn, const char *prefix);
+
 
 void ntt_rdiropen(const char *dn, const char *prefix) {
     DIR *dir = opendir(dn);
@@ -63,7 +71,7 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
 
         /* actual logic of iteration */
         if (curr.d_type == DT_DIR) { 
-            printf("%s%s %s\n", prefix, CROSS HORIZ, curr.d_name);
+            printf("%s%s "DIR_COLOR("%s\n"), prefix, CROSS HORIZ, curr.d_name);
             /* creating the next directory entry */
             char next_dir_name[strlen(dn) + strlen(curr.d_name) + 2];
             snprintf (
@@ -80,7 +88,7 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
             /* iterating on the next directory */
             ntt_rdiropen(next_dir_name, new_prefix);
         }
-        else { printf("%s%s %s\n", prefix, CROSS HORIZ, curr.d_name); }
+        else { printf("%s%s "FILE_COLOR("%s\n"), prefix, CROSS HORIZ, curr.d_name); }
         curr = *next;
     }
     if (errno != 0) {
@@ -91,7 +99,12 @@ void ntt_rdiropen(const char *dn, const char *prefix) {
     closedir(dir);
 
     if (started) {
-        printf("%s%s %s\n", prefix, END HORIZ, curr.d_name);
+        switch(curr.d_type) {
+            case DT_DIR:
+                printf("%s%s "DIR_COLOR("%s\n"), prefix, END HORIZ, curr.d_name); break;
+            default:
+                printf("%s%s "FILE_COLOR("%s\n"), prefix, END HORIZ, curr.d_name); break;
+        }
 
         if (curr.d_type == DT_DIR) {
             char next_dir_name[strlen(dn) + strlen(curr.d_name) + 2];

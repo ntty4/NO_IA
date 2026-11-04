@@ -8,3 +8,7 @@ yat.out:
 clean:
 	rm yat.out
 	make
+
+exec:
+	make clean
+	./yat.out .
