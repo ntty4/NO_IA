@@ -30,26 +30,20 @@
  * the end of the children
  */
 
-void ntt_rdiropen(const char *dn, const char *prefix, int is_last);
+/* there the key for winning is:
+ * that we print the END and CORSS for the current element if is the last or not,
+ * but in reality we will give to the next directory SPACE or LINE, because:
+ *
+ * - we are inside a folder that is the last one:
+ *   then before the next element we will must print an SPACE
+ *   because the father forlder has no more childs to continue
+ *
+ * - we are inside the a folder that is not the last one:
+ *   then before the next element we will must print A VERT 
+ *   because the father folder has other childs to continue */
 
-void ntt_rdraw(const char *dn, const char *prefix,
-        const struct dirent *curr, int is_last) {
 
-    char next_dir_name[strlen(dn) + strlen(curr->d_name) + 2];
-    snprintf (
-        next_dir_name, sizeof(next_dir_name),
-        "%s/%s",dn, curr->d_name
-    );
-
-    char new_prefix[strlen(prefix) + strlen(is_last ? END HORIZ " " : CROSS HORIZ" ") + 1];
-    snprintf (
-        new_prefix, sizeof(new_prefix),
-        "%s%s", prefix, is_last ? END HORIZ " " : CROSS HORIZ"  "
-    );
-    ntt_rdiropen(next_dir_name, new_prefix, 0);
-}
-
-void ntt_rdiropen(const char *dn, const char *prefix, int is_last) {
+void ntt_rdiropen(const char *dn, const char *prefix) {
     DIR *dir = opendir(dn);
     if (!dir) { return; }
 
@@ -67,20 +61,58 @@ void ntt_rdiropen(const char *dn, const char *prefix, int is_last) {
             strcmp(next->d_name, "..") == 0) { continue; }
         if (started == 0) { started = 1; curr = *next; continue; }
 
-        if (curr.d_type == DT_DIR) {
-            printf("%s %s\n", prefix, curr.d_name);
-            ntt_rdraw
+        /* actual logic of iteration */
+        if (curr.d_type == DT_DIR) { 
+            printf("%s%s %s\n", prefix, CROSS HORIZ, curr.d_name);
+            /* creating the next directory entry */
+            char next_dir_name[strlen(dn) + strlen(curr.d_name) + 2];
+            snprintf (
+                next_dir_name, sizeof(next_dir_name), "%s/%s",dn, curr.d_name
+            );
+
+            /* creating the next prefix for the next branch */
+            char *this_prefix = VERT "  ";
+            char new_prefix[strlen(prefix) + strlen(this_prefix) + 1];
+            snprintf (
+                new_prefix, sizeof(new_prefix),
+                "%s%s", prefix, this_prefix
+            );
+            /* iterating on the next directory */
+            ntt_rdiropen(next_dir_name, new_prefix);
         }
+        else { printf("%s%s %s\n", prefix, CROSS HORIZ, curr.d_name); }
         curr = *next;
     }
+    if (errno != 0) {
+        perror("Error with readdir");
+        closedir(dir);
+        return;
+    }
+    closedir(dir);
 
     if (started) {
+        printf("%s%s %s\n", prefix, END HORIZ, curr.d_name);
+
         if (curr.d_type == DT_DIR) {
+            char next_dir_name[strlen(dn) + strlen(curr.d_name) + 2];
+            snprintf (
+                next_dir_name, sizeof(next_dir_name), "%s/%s",dn, curr.d_name
+            );
+
+            char *this_prefix = "   ";
+            char new_prefix[strlen(prefix) + strlen(this_prefix) + 1];
+            snprintf (
+                new_prefix, sizeof(new_prefix),
+                "%s%s", prefix, this_prefix
+            );
+
+            ntt_rdiropen(next_dir_name, new_prefix);
         }
     }
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 2) { printf("Must give the name of folder\n"); return 1; }
-    ntt_rdiropen(argv[1],  "", 0);
+    printf("%s\n", argv[1]);
+    ntt_rdiropen(argv[1],  "");
 }
