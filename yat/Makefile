@@ -1,14 +1,17 @@
 CC = gcc
-FLAGS = -Wall -Wextra -g -ggdb
-SRC = yat.c
+CFLAGS = -Wall -Wextra -g
+OUT = yat.out
+ARGS ?= .
 
-yat.out:
-	$(CC) $(SRC) $(FLAGS) -o $@ 
+all: $(OUT)
+
+$(OUT): yat.c
+	$(CC) $(FLAGS) $< -o $@
+
+run: $(OUT)
+	./$(OUT) $(ARGS)
 
 clean:
-	rm yat.out
-	make
+	rm -f yat.out
 
-exec:
-	make clean
-	./yat.out .
+.PHONY: all run clean
